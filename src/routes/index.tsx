@@ -106,12 +106,14 @@ export default function Home() {
     const debouncedScrollToNext = debounce(() => {
         if (currentIndex() < papers().length - 1) {
             setSwipeDirection("up");
-            setIsScrolling(true); // For animation
             setCurrentIndex((i) => i + 1);
             setTimeout(() => {
                 setIsScrolling(false);
                 setSwipeDirection(null);
             }, scrollCooldown); // Animation cooldown
+        } else {
+            // If not scrolling, reset isScrolling state immediately
+            setIsScrolling(false);
         }
 
         if (currentIndex() >= papers().length - 2) {
@@ -122,22 +124,30 @@ export default function Home() {
     const debouncedScrollToPrevious = debounce(() => {
         if (currentIndex() > 0) {
             setSwipeDirection("down");
-            setIsScrolling(true); // For animation
             setCurrentIndex((i) => i - 1);
             setTimeout(() => {
                 setIsScrolling(false);
                 setSwipeDirection(null);
             }, scrollCooldown); // Animation cooldown
+        } else {
+            // If not scrolling, reset isScrolling state immediately
+            setIsScrolling(false);
         }
     }, 100); // 100ms debounce
 
     // Call these instead of the originals
-    const scrollToNext = () => debouncedScrollToNext();
-    const scrollToPrevious = () => debouncedScrollToPrevious();
+    const scrollToNext = () => {
+        if (isLoading() || isScrolling()) return;
+        setIsScrolling(true);
+        debouncedScrollToNext();
+    };
+    const scrollToPrevious = () => {
+        if (isLoading() || isScrolling()) return;
+        setIsScrolling(true);
+        debouncedScrollToPrevious();
+    };
 
     const handleScroll = (e: WheelEvent) => {
-        if (isLoading() || isScrolling()) return;
-
         // Solo manejar el scroll si viene del documento principal
         if ((e.target as HTMLElement).closest(".scrollable-content")) {
             return;
@@ -165,7 +175,7 @@ export default function Home() {
 
     const handleTouchEnd = (e: TouchEvent) => {
         // Usar el estado isCardInteracting en lugar de pasar como parámetro
-        if (isCardInteracting() || isLoading() || isScrolling()) return;
+        if (isCardInteracting()) return;
 
         const endY = e.changedTouches[0].clientY;
         const deltaY = swipeStartY() - endY;
@@ -257,8 +267,7 @@ export default function Home() {
         window.addEventListener("wheel", handleScroll, { passive: false });
 
         const handleKeyPress = (event: KeyboardEvent) => {
-            if (isLoading() || isScrolling()) return;
-
+            // The isLoading() || isScrolling() check is now in scrollToPrevious/Next
             if (event.key === "ArrowUp") {
                 scrollToPrevious();
             } else if (event.key === "ArrowDown") {
