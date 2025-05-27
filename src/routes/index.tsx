@@ -256,8 +256,21 @@ export default function Home() {
         setFavorites(loadFavorites());
         window.addEventListener("wheel", handleScroll, { passive: false });
 
+        const handleKeyPress = (event: KeyboardEvent) => {
+            if (isLoading() || isScrolling()) return;
+
+            if (event.key === "ArrowUp") {
+                scrollToPrevious();
+            } else if (event.key === "ArrowDown") {
+                scrollToNext();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyPress);
+
         return () => {
             window.removeEventListener("wheel", handleScroll);
+            window.removeEventListener("keydown", handleKeyPress);
         };
     });
 
